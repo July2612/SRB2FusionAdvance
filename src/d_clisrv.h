@@ -76,6 +76,7 @@ typedef enum
 #ifdef NEWPING
 	PT_PING,          // Packet sent to tell clients the other client's latency to server.
 #endif
+	PT_ISFUSIONADVANCE,
 	NUMPACKETTYPE
 } packettype_t;
 

@@ -128,6 +128,8 @@ static boolean cl_packetmissed;
 // here it is for the secondary local player (splitscreen)
 static UINT8 mynode; // my address pointofview server
 
+boolean is_client_fusionadvance[MAXNETNODES];
+
 static UINT8 localtextcmd[MAXTEXTCMD];
 static UINT8 localtextcmd2[MAXTEXTCMD]; // splitscreen
 static tic_t neededtic;
@@ -2384,6 +2386,7 @@ static void CL_RemovePlayer(INT32 playernum, INT32 reason)
 			SV_InitResynchVars(playernode[playernum]);
 
 			nodeingame[playernode[playernum]] = false;
+			is_client_fusionadvance[node] = false;
 			Net_CloseConnection(playernode[playernum]);
 			ResetNode(node);
 		}
@@ -2473,6 +2476,7 @@ void CL_Reset(void)
 	if (servernode > 0 && servernode < MAXNETNODES)
 	{
 		nodeingame[(UINT8)servernode] = false;
+		is_client_fusionadvance[(UINT8)servernode] = false;
 		Net_CloseConnection(servernode);
 	}
 	D_CloseConnection(); // netgame = false
@@ -2997,6 +3001,7 @@ void D_ClientServerInit(void)
 
 static void ResetNode(INT32 node)
 {
+	is_client_fusionadvance[node] = false;
 	nodeingame[node] = false;
 	nodetoplayer[node] = -1;
 	nodetoplayer2[node] = -1;
@@ -3319,6 +3324,11 @@ static boolean SV_AddWaitingPlayers(void)
 
 	return newplayer;
 }
+static inline void SendFAInfo(INT32 node)
+{
+	netbuffer->packettype = PT_ISFUSIONADVANCE;
+	HSendPacket(node, true, 0, 0);
+}
 
 void CL_AddSplitscreenPlayer(void)
 {
@@ -3496,6 +3506,7 @@ static void HandleConnect(SINT8 node)
 #ifdef JOININGAME
 		if (nodewaiting[node])
 		{
+			SendFAInfo(node);
 			if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION) && newnode)
 			{
 				SV_SendSaveGame(node); // send a complete game state
@@ -4028,6 +4039,7 @@ FILESTAMP
 			}
 			Net_CloseConnection(node);
 			nodeingame[node] = false;
+			is_client_fusionadvance[node] = false;
 			break;
 // -------------------------------------------- CLIENT RECEIVE ----------
 		case PT_RESYNCHEND:
@@ -4190,6 +4202,10 @@ FILESTAMP
 			}
 			if (client)
 				Got_Filetxpak();
+			break;
+			case PT_ISFUSIONADVANCE:
+			CONS_Printf("hi im on fusion advance\n");
+			is_client_fusionadvance[node] = true;
 			break;
 		default:
 			DEBFILE(va("UNKNOWN PACKET TYPE RECEIVED %d from host %d\n",

@@ -843,6 +843,7 @@ static const char *packettypename[NUMPACKETTYPE] =
 	"CLIENTJOIN",
 	"NODETIMEOUT",
 	"RESYNCHING",
+	"ISFUSIONADVANCE",
 #ifdef NEWPING
 	"PING"
 #endif
